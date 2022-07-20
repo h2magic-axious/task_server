@@ -1,15 +1,24 @@
 use serde::{Serialize, Deserialize};
-use chrono::{TimeZone, NaiveDateTime};
+use chrono::{NaiveDateTime, Utc, FixedOffset};
+use sqlx::postgres::PgPool;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Default, sqlx::FromRow)]
+#[derive(Serialize, Deserialize, Debug, Clone, sqlx::FromRow)]
 pub struct Task {
     pub id: uuid::Uuid,
     pub title: String,
     pub effective: Option<bool>,
-    pub lifetime: Option<usize>,
+    pub lifetime: Option<i32>,
     pub created_time: Option<NaiveDateTime>,
-    pub doing_time: Option<NaiveDateTime>,
+    pub doing_time: NaiveDateTime,
     pub is_loop: Option<bool>,
     pub running: serde_json::Value,
     pub failed: Option<serde_json::Value>,
+}
+
+async fn fetch_latest_tasks(pool: &PgPool) -> Result<Vec<Task>, sqlx::Error> {
+    let rows = sqlx::query_as!(Task, "SELECT * FROM tasks",)
+        .fetch_all(pool)
+        .await?;
+
+    Ok(rows)
 }
