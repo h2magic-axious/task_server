@@ -11,5 +11,5 @@ pub struct Task {
     pub doing_time: Option<NaiveDateTime>,
     pub is_loop: Option<bool>,
     pub running: serde_json::Value,
-    pub failed: serde_json::Value,
+    pub failed: Option<serde_json::Value>,
 }
