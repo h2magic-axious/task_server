@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS tasks (
     "lifetime" INT DEFAULT 60,
     "created_time" TIMESTAMP DEFAULT now(),
     "doing_time" TIMESTAMP NOT NULL,
-    "loop" BOOLEAN DEFAULT false,
-    "running" JSON DEFAULT NULL,
+    "is_loop" BOOLEAN DEFAULT false,
+    "running" JSON NOT NULL,
     "failed" JSON DEFAULT NULL
 );
