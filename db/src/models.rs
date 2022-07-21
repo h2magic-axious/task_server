@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use chrono::{NaiveDateTime, Utc, FixedOffset};
+use chrono::NaiveDateTime;
 use sqlx::postgres::PgPool;
 
 #[derive(Serialize, Deserialize, Debug, Clone, sqlx::FromRow)]
