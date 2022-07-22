@@ -12,7 +12,8 @@ async fn main() -> Result<(), sqlx::Error> {
         .connect(&database_url).await?;
 
     let rows = Task::all(&pool).await?;
-    Task::cancel_effective(&pool, rows.get(1)).await;
+    println!("{:#?}", rows);
+    // Task::cancel_effective(&pool, rows.get(1)).await;
 
     Ok(())
 }
