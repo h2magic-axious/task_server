@@ -77,20 +77,18 @@ impl Task {
         Ok(rows)
     }
 
-    pub async fn insert(pool: &PgPool, task: &Task) {
+    pub async fn insert(&self, pool: &PgPool) {
         let _ = sqlx::query!(
             r#"INSERT INTO tasks (id,title,effective,lifetime,created_time,doing_time,is_loop,running,failed) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)"#,
-            task.id, task.title, task.effective,task.lifetime,task.created_time,task.doing_time,
-            task.is_loop,task.running,task.failed
+            self.id, self.title, self.effective,self.lifetime,self.created_time,self.doing_time,
+            self.is_loop,self.running,self.failed
         ).fetch_one(pool).await;
     }
 
-    pub async fn cancel_effective(pool: &PgPool, task: Option<&Task>) {
-        if let Some(t) = task {
-            let _ = sqlx::query!(
+    pub async fn cancel_effective(&self, pool: &PgPool) {
+        let _ = sqlx::query!(
                 r#"UPDATE tasks SET effective = FALSE WHERE id = $1"#,
-                t.id
+                self.id
             ).fetch_one(pool).await;
-        };
     }
 }
