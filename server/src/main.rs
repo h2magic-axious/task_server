@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate dotenv_codegen;
-// extern crate db;
 
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgPoolOptions;
@@ -30,6 +29,11 @@ impl TaskBody {
 
 #[tokio::main]
 async fn main() {
+    let database_url = dotenv!("DATABASE_URL");
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&database_url).await?;
+
     let create_task = warp::post()
         .and(warp::path("task"))
         .and(warp::path("create"))
