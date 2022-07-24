@@ -1133,7 +1133,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "db",
- "dotenv_codegen",
+ "dotenv",
  "lazy_static",
  "serde",
  "serde_json",

@@ -1,6 +1,6 @@
-#[macro_use]
-extern crate dotenv_codegen;
+use std::env;
 
+use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgPoolOptions;
 use warp::Filter;
@@ -29,7 +29,11 @@ impl TaskBody {
 
 #[tokio::main]
 async fn main() {
-    let database_url = dotenv!("DATABASE_URL");
+    dotenv().ok();
+
+    let database_url = env::var("DATABASE_URL")
+        .expect("未找到环境变量: DATABASE_URL");
+
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&database_url).await?;
