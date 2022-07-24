@@ -1,6 +1,8 @@
+use std::env;
 use serde::{Serialize, Deserialize};
 use chrono::{NaiveDateTime, Duration, Utc};
-use sqlx::postgres::PgPool;
+use sqlx::{Pool, Postgres};
+use sqlx::postgres::{PgPool, PgPoolOptions};
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone, sqlx::FromRow)]
@@ -17,6 +19,15 @@ pub struct Task {
 }
 
 type QueryResult = Result<Vec<Task>, sqlx::Error>;
+
+pub async fn pool_builder() -> Pool<Postgres> {
+    let database_url = env::var("DATABASE_URL")
+        .expect("未找到环境变量: DATABASE_URL");
+
+    PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&database_url).await.unwrap()
+}
 
 impl Task {
     pub fn new(

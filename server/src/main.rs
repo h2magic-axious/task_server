@@ -1,12 +1,10 @@
-use std::env;
 use once_cell::sync::OnceCell;
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
-use sqlx::postgres::PgPoolOptions;
 use warp::Filter;
 use warp::reply::Json;
-use db::models::Task;
+use db::models::{Task, pool_builder};
 
 #[derive(Deserialize, Serialize)]
 struct TaskBody {
@@ -31,16 +29,6 @@ impl TaskBody {
     }
 }
 
-async fn pool_builder() -> Pool<Postgres> {
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL")
-        .expect("未找到环境变量: DATABASE_URL");
-
-    PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&database_url).await.unwrap()
-}
 
 async fn insert(task_body: TaskBody) -> Result<Json, warp::Rejection> {
     let task = task_body.building_task();
@@ -51,6 +39,8 @@ async fn insert(task_body: TaskBody) -> Result<Json, warp::Rejection> {
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
     let pool = pool_builder().await;
     POOL.set(pool).unwrap();
 
