@@ -29,7 +29,13 @@ impl Task {
         let created_time = Utc::now();
         let lifetime = match lifetime {
             None => 60,
-            Some(i) => i
+            Some(i) => {
+                if i <= 0 {
+                    60
+                } else {
+                    i
+                }
+            }
         };
         let doing_time = created_time + Duration::seconds(lifetime as i64);
 
@@ -79,7 +85,7 @@ impl Task {
         ).fetch_one(pool).await;
     }
 
-    pub async fn cancel_effective(pool: &PgPool, task: Option<&Task>){
+    pub async fn cancel_effective(pool: &PgPool, task: Option<&Task>) {
         if let Some(t) = task {
             let _ = sqlx::query!(
                 r#"UPDATE tasks SET effective = FALSE WHERE id = $1"#,
