@@ -2,6 +2,7 @@ use once_cell::sync::OnceCell;
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
+use sqlx::types::Uuid;
 use warp::Filter;
 use warp::reply::Json;
 use db::models::{Task, pool_builder};
@@ -37,6 +38,11 @@ async fn insert(task_body: TaskBody) -> Result<Json, warp::Rejection> {
     Ok(result)
 }
 
+async fn cancel(id: Uuid) -> Result<Json, warp::Rejection> {
+    let _ = Task::cancel_effective(id, &POOL.get().unwrap()).await;
+    Ok(warp::reply::json(&serde_json::json!({"msg": "操作已完成"})))
+}
+
 #[tokio::main]
 async fn main() {
     dotenv().ok();
@@ -51,5 +57,13 @@ async fn main() {
         .and(warp::body::json())
         .and_then(insert);
 
-    warp::serve(create_task).run(([127, 0, 0, 1], 3030)).await;
+    let cancel_task = warp::get()
+        .and(warp::path("task"))
+        .and(warp::path("cancel"))
+        .and(warp::path::param())
+        .and_then(cancel);
+
+    let router = create_task.or(cancel_task);
+
+    warp::serve(router).run(([127, 0, 0, 1], 3030)).await;
 }

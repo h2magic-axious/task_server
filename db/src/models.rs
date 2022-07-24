@@ -96,10 +96,10 @@ impl Task {
         ).fetch_one(pool).await;
     }
 
-    pub async fn cancel_effective(&self, pool: &PgPool) {
+    pub async fn cancel_effective(id: Uuid, pool: &PgPool) {
         let _ = sqlx::query!(
                 r#"UPDATE tasks SET effective = FALSE WHERE id = $1"#,
-                self.id
+                id
             ).fetch_one(pool).await;
     }
 }
