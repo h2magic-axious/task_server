@@ -36,7 +36,7 @@ async fn main() {
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
-        .connect(&database_url).await?;
+        .connect(&database_url).await.unwrap();
 
     let create_task = warp::post()
         .and(warp::path("task"))
@@ -48,5 +48,5 @@ async fn main() {
             warp::reply::json(&task)
         });
 
-    warp::serve(create_task).run(([127, 0, 0, 1], 3030)).await
+    warp::serve(create_task).run(([127, 0, 0, 1], 3030)).await;
 }
