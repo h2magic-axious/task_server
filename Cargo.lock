@@ -1814,6 +1814,7 @@ dependencies = [
  "chrono",
  "db",
  "dotenv",
+ "log",
  "once_cell",
  "serde",
  "serde_json",

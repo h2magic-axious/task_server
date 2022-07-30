@@ -76,7 +76,7 @@ impl Task {
     }
 
     pub async fn query_to_doing(pool: &PgPool) -> QueryResult {
-        let deadline = Utc::now() + Duration::minutes(20);
+        let deadline = chrono::offset::Local::now() + Duration::minutes(20);
         let dt = deadline.naive_local();
         let rows = sqlx::query_as!(
             Task,
