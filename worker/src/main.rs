@@ -3,7 +3,6 @@ use dotenv::dotenv;
 use reqwest::Error;
 use sqlx::{Pool, Postgres};
 use db::models::{Task, pool_builder};
-use reqwest::header::{HeaderMap, HeaderValue, HeaderName};
 use serde_json::Value;
 
 static POOL: OnceCell<Pool<Postgres>> = OnceCell::new();
@@ -29,7 +28,7 @@ async fn main() {
     dotenv().ok();
     init().await;
 
-    let time_delta = 3;
+    let time_delta = 600;
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(time_delta));
 
     let mut count = 1;
@@ -42,6 +41,10 @@ async fn main() {
 
         let tasks = Task::query_to_doing(&POOL.get().unwrap()).await.unwrap();
         println!("Get {} tasks need doing", tasks.len());
+        for task in &tasks {
+            println!("\t{}\t{}\t{}", task.id, task.doing_time, task.title);
+        }
+        println!();
 
         for task in tasks {
             let delta = {
@@ -65,23 +68,31 @@ async fn main() {
 async fn doing(delta: &tokio::time::Duration, task: &Task) {
     println!("After {:#?}, Doing task: {}", delta, task.id);
 
+    match running(&task).await {
+        Ok(_) => {}
+        Err(_e) => {
+            let _ = failed(&task).await;
+        }
+    }
 
-    // Task::cancel_effective(task.id, &POOL.get().unwrap());
+    Task::cancel_effective(task.id, &POOL.get().unwrap()).await;
 }
 
-async fn request_get(url: &str, header: HeaderMap) -> Result<(), Error> {
+async fn request_get(url: &str) -> Result<(), Error> {
+    println!("GET {}", url);
     let _ = CLIENT.get().unwrap()
         .get(url)
-        .headers(header)
+        .header("S-name", "task_server")
         .send()
         .await?;
     Ok(())
 }
 
-async fn request_post(url: &str, body: Option<&Value>, header: HeaderMap) -> Result<(), Error> {
+async fn request_post(url: &str, body: Option<&Value>) -> Result<(), Error> {
+    println!("POST {}", url);
     let req = CLIENT.get().unwrap()
         .post(url)
-        .headers(header);
+        .header("S-name", "task_server");
 
     match body {
         None => {
@@ -95,45 +106,13 @@ async fn request_post(url: &str, body: Option<&Value>, header: HeaderMap) -> Res
     Ok(())
 }
 
-async fn request(method: &str, url: &str, body: Option<&Value>, header: HeaderMap) -> Result<(), Error> {
+async fn request(method: &str, url: &str, body: Option<&Value>) -> Result<(), Error> {
     if method == "POST" {
-        request_post(url, body, header).await?
+        request_post(url, body).await?
     } else {
-        request_get(url, header).await?
+        request_get(url).await?
     }
     Ok(())
-}
-
-async fn header_builder(task: &Task, running: bool) -> Result<HeaderMap, Error> {
-    let mut header = HeaderMap::new();
-    header.insert("S-name", HeaderValue::from_str("task_server").unwrap());
-
-    let agent = {
-        if running {
-            task.running.get("header")
-        } else {
-            match &task.failed {
-                None => { return Ok(header); }
-                Some(f) => {
-                    f.get("header")
-                }
-            }
-        }
-    };
-
-    if let Some(h) = agent {
-        for (key, value) in h.as_object().unwrap() {
-            let temp_k = HeaderName::try_from(key).ok();
-            let temp_v = HeaderValue::try_from(value).ok();
-            if let Some(k) = temp_k {
-                if let Some(v) = temp_v {
-                    header.insert(k, v);
-                }
-            }
-        }
-    }
-
-    Ok(header)
 }
 
 async fn running(task: &Task) -> Result<(), Error> {
@@ -141,7 +120,6 @@ async fn running(task: &Task) -> Result<(), Error> {
         task.running.get("method").unwrap().as_str().unwrap(),
         task.running.get("url").unwrap().as_str().unwrap(),
         task.running.get("body"),
-        header_builder(task, true).await?,
     ).await?;
 
     Ok(())
@@ -153,7 +131,6 @@ async fn failed(task: &Task) -> Result<(), Error> {
             f.get("method").unwrap().as_str().unwrap(),
             f.get("url").unwrap().as_str().unwrap(),
             f.get("body"),
-            header_builder(task, false).await?,
         ).await?;
     }
 
