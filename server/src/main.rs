@@ -7,7 +7,7 @@ use warp::Filter;
 use warp::reply::Json;
 use db::models::{Task, pool_builder};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 struct TaskBody {
     title: String,
     lifetime: Option<i32>,
@@ -32,6 +32,7 @@ impl TaskBody {
 
 
 async fn insert(task_body: TaskBody) -> Result<Json, warp::Rejection> {
+    println!("POST /task/create\nBody: {:#?}", task_body);
     let task = task_body.building_task();
     let _ = task.insert(&POOL.get().unwrap()).await;
     let result = warp::reply::json(&task);
@@ -39,6 +40,7 @@ async fn insert(task_body: TaskBody) -> Result<Json, warp::Rejection> {
 }
 
 async fn cancel(id: Uuid) -> Result<Json, warp::Rejection> {
+    println!("GET /task/cancel/{}", id);
     let _ = Task::cancel_effective(id, &POOL.get().unwrap()).await;
     Ok(warp::reply::json(&serde_json::json!({"msg": "操作已完成"})))
 }
@@ -53,7 +55,6 @@ async fn main() {
     let create_task = warp::post()
         .and(warp::path("task"))
         .and(warp::path("create"))
-        // Only accept bodies smaller than 16kb...)
         .and(warp::body::json())
         .and_then(insert);
 
