@@ -80,11 +80,15 @@ async fn doing(delta: &tokio::time::Duration, task: &Task) {
 
 async fn request_get(url: &str) -> Result<(), Error> {
     println!("GET {}", url);
-    let _ = CLIENT.get().unwrap()
+    let response = CLIENT.get().unwrap()
         .get(url)
         .header("S-name", "task_server")
         .send()
         .await?;
+
+    let result : serde_json::Value = response.json().await?;
+    println!("\tResult: {:#?}", result);
+
     Ok(())
 }
 
@@ -94,14 +98,18 @@ async fn request_post(url: &str, body: Option<&Value>) -> Result<(), Error> {
         .post(url)
         .header("S-name", "task_server");
 
-    match body {
+    let response = match body {
         None => {
-            req.send().await?;
+            req.send().await?
         }
         Some(b) => {
-            req.json(b).send().await?;
+            req.json(b).send().await?
         }
-    }
+    };
+
+    let result: serde_json::Value = response.json().await?;
+
+    println!("\tResult: {:#?}", result);
 
     Ok(())
 }
