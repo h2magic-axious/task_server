@@ -66,5 +66,5 @@ async fn main() {
 
     let router = create_task.or(cancel_task);
 
-    warp::serve(router).run(([127, 0, 0, 1], 3030)).await;
+    warp::serve(router).run(([0, 0, 0, 0], 3030)).await;
 }
