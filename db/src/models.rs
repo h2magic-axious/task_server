@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::env;
 use serde::{Serialize, Deserialize};
 use chrono::{NaiveDateTime, Duration, Utc};
@@ -87,6 +88,24 @@ impl Task {
 
         Ok(rows)
     }
+
+    pub async fn query(pool: &PgPool, query_params: HashMap<String, String>) -> QueryResult {
+        let mut condition = vec![];
+        for (key, value) in query_params {
+            condition.push(format!("{}={}", key, value));
+        }
+        let condition = condition.join(" AND ");
+
+        let rows = sqlx::query_as!(
+            Task,
+            r#"SELECT * FROM task WHERE $1"#,
+            condition
+        ).fetch_all(pool)
+            .await?;
+
+        Ok(rows)
+    }
+
 
     pub async fn insert(&self, pool: &PgPool) {
         let _ = sqlx::query!(
